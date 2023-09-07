@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -23,7 +25,8 @@ func NewClient(address, password string,opts ...options) *Client {
 		opt(client.Opts)
 	}
 	checkParm(client.Opts)
-	o := redis.Options{
+
+	client.c = redis.NewClient(&redis.Options{
 		Addr: client.Opts.address,
 		Network: client.Opts.network,
 		Password: client.Opts.password,
@@ -31,10 +34,21 @@ func NewClient(address, password string,opts ...options) *Client {
 		PoolTimeout: time.Duration(client.Opts.poolTimeout)*time.Second,
 		DB: client.Opts.db,
 		MaxIdleConns: client.Opts.maxIdleConns,
-	}
-	client.c = redis.NewClient(&o)
+	})
 	return &client
 }
-func (c *Client)GetConn()*redis.Conn{
+func (c *Client)GetConn()*redis.Conn{// 遗弃！！！
 	return c.c.Conn()
+}
+
+func (c *Client)XADD(ctx context.Context,topic string,maxLen int,key,val string)(res string,err error) {
+	if topic ==""{
+		return "",errors.New("redis XADD topic can't be empty")
+	}
+	return c.c.XAdd(ctx,&redis.XAddArgs{
+		Stream: topic,
+		ID: "*",
+		MaxLen: int64(maxLen),
+		Values: map[string]interface{}{key: val},
+	}).Result()
 }

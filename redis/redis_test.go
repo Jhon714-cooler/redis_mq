@@ -21,3 +21,9 @@ func TestConnet(t *testing.T) {
 	}
 
 }
+func Test_XADD(t *testing.T) {
+	redisclient := NewClient(addr, password)
+	ctx := context.Background()
+	res ,_ := redisclient.XADD(ctx, "test_topic", 10, "new", "new")
+	log.Println(res)
+}
